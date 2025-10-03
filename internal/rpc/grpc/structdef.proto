@@ -1,0 +1,50 @@
+// Copyright (c) 2025 Matheus Degiovani
+// Use of this source code is governed by an ISC
+// license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package goserbench;
+
+option go_package = "github.com/matheusd/gorpcbench/internal/rpc/grpc;grpc";
+
+message VoidData{}
+
+message AddRequest{
+  int64 a = 1;
+  int64 b = 2;
+}
+
+message AddResult{
+  int64 res = 1;
+}
+
+message TreeNode {
+  int64 value = 1;
+  repeated TreeNode children = 2;
+}
+
+message MultTreeRequest {
+ int64 mult = 1;
+ TreeNode tree = 2;
+}
+
+message MultTreeResponse {
+ TreeNode tree = 1;
+}
+
+message ToHexRequest {
+  bytes in = 1;
+}
+
+message ToHexResponse {
+  bytes out = 1;
+}
+
+service API {
+  rpc Nop (VoidData) returns (VoidData) {}
+  rpc Add (AddRequest) returns (AddResult) {}
+  rpc MultTree (MultTreeRequest) returns (MultTreeResponse) {}
+  rpc ToHex (ToHexRequest) returns (ToHexResponse) {}
+}
+

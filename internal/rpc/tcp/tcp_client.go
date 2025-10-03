@@ -19,6 +19,7 @@ type tcpClient struct {
 	c      net.Conn
 	reader *bufio.Reader
 	writer *bufio.Writer
+	tree   rpcbench.TreeNodeImpl
 }
 
 func (c *tcpClient) Nop(ctx context.Context) error {
@@ -50,20 +51,26 @@ func (c *tcpClient) Add(ctx context.Context, a int64, b int64) (int64, error) {
 	return binutils.ReadInt64(c.reader, c.aux)
 }
 
-func (c *tcpClient) MultTreeValues(ctx context.Context, mult int64, tree *rpcbench.TreeNode) error {
+func (c *tcpClient) MultTreeValues(ctx context.Context, mult int64, fillArgs func(rpcbench.TreeNode)) (rpcbench.TreeNode, error) {
+	tree := &c.tree
+	tree.Reset()
+	fillArgs(tree)
 	if err := c.writer.WriteByte(cmdMultTree); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := binutils.WriteMultTreeRequest(c.writer, c.aux, mult, tree); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := c.writer.Flush(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return binutils.ReadMultTreeReponse(c.reader, c.aux, tree)
+	if err := binutils.ReadMultTreeReponse(c.reader, c.aux, tree); err != nil {
+		return nil, err
+	}
+	return tree, nil
 }
 
 func (c *tcpClient) ToHex(ctx context.Context, in, out []byte) error {

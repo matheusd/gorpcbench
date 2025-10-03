@@ -50,21 +50,25 @@ func makeCall(ctx context.Context, bc BenchCase, bcli *benchClient) (int, error)
 		return 0, nil
 
 	case ClientCallTreeMult:
-		// Pick a random tree. Fill it. Save a copy (to return values).
-		ri := bcli.rng.IntN(len(bcli.testTrees))
-		pair := &bcli.testTrees[ri]
-		populateWithRand(&pair.src, bcli.rng)
-		copyValues(&pair.src, &pair.tgt)
+		// Pick a random tree and mult and populate the target tree.
+		bcli.chosenTestTree = bcli.rng.IntN(len(bcli.testTrees))
+		// bcli.chosenTestTree = 3
 		mult := bcli.rng.Int64()
+		pair := &bcli.testTrees[bcli.chosenTestTree]
+		populateWithRand(&pair.tgt, bcli.rng)
 
 		// Execute the call.
-		err := bcli.c.MultTreeValues(ctx, mult, &pair.tgt)
+		res, err := bcli.c.MultTreeValues(ctx, mult, bcli.fillTreeArgs)
 		if err != nil {
 			return 0, err
 		}
 
 		// Check if result matches expected.
-		if !treeMatchesForMult(&pair.src, &pair.tgt, mult) {
+		if !treeMatchesForMult(res, &pair.tgt, mult) {
+			fmt.Println("res")
+			PrintTreeNode(res, 1, "")
+			fmt.Println("target")
+			PrintTreeNode(&pair.tgt, mult, "")
 			return 0, errors.New("mismatch in request and response trees")
 		}
 
@@ -109,7 +113,7 @@ func runSequentialBench(b *testing.B, bc BenchCase) error {
 
 	var N, totalBytes int64
 	for b.Loop() {
-		if bytes, err := makeCall(ctx, bc, &ch.clients[0]); err != nil {
+		if bytes, err := makeCall(ctx, bc, ch.clients[0]); err != nil {
 			return err
 		} else {
 			totalBytes += int64(bytes)
@@ -139,7 +143,7 @@ func runParallelBench(b *testing.B, bc BenchCase) error {
 
 	clients := make(chan *benchClient, nbClients)
 	for i := range ch.clients {
-		clients <- &ch.clients[i]
+		clients <- ch.clients[i]
 	}
 
 	type procTotals struct {

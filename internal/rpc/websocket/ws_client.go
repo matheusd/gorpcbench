@@ -17,6 +17,7 @@ import (
 
 type wsClient struct {
 	conn   *websocket.Conn
+	tree   rpcbench.TreeNodeImpl
 	aux    []byte
 	c      net.Conn
 	reader *bufio.Reader
@@ -82,35 +83,41 @@ func (c *wsClient) Add(ctx context.Context, a int64, b int64) (int64, error) {
 	return binutils.ReadInt64(c.reader, c.aux)
 }
 
-func (c *wsClient) MultTreeValues(ctx context.Context, mult int64, tree *rpcbench.TreeNode) error {
+func (c *wsClient) MultTreeValues(ctx context.Context, mult int64, fillArgs func(rpcbench.TreeNode)) (rpcbench.TreeNode, error) {
+	tree := &c.tree
+	tree.Reset()
+	fillArgs(tree)
 	rawWriter, err := c.conn.NextWriter(websocket.BinaryMessage)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	c.writer.Reset(rawWriter)
 
 	if err := c.writer.WriteByte(cmdMultTree); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := binutils.WriteMultTreeRequest(c.writer, c.aux, mult, tree); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := c.writer.Flush(); err != nil {
-		return err
+		return nil, err
 	}
 	if err := rawWriter.Close(); err != nil {
-		return err
+		return nil, err
 	}
 
 	_, rawReader, err := c.conn.NextReader()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	c.reader.Reset(rawReader)
 
-	return binutils.ReadMultTreeReponse(c.reader, c.aux, tree)
+	if err := binutils.ReadMultTreeReponse(c.reader, c.aux, tree); err != nil {
+		return nil, err
+	}
+	return tree, nil
 }
 
 func (c *wsClient) ToHex(ctx context.Context, in, out []byte) error {

@@ -10,7 +10,7 @@ import (
 	"github.com/matheusd/gorpcbench/rpcbench"
 )
 
-func treeToGrpc(t *rpcbench.TreeNode, g *TreeNode) {
+func treeToGrpc(t *rpcbench.TreeNodeImpl, g *TreeNode) {
 	g.Value = t.Value
 	g.Children = make([]*TreeNode, len(t.Children))
 	for i := range t.Children {
@@ -19,7 +19,7 @@ func treeToGrpc(t *rpcbench.TreeNode, g *TreeNode) {
 	}
 }
 
-func grpcToTree(g *TreeNode, t *rpcbench.TreeNode) error {
+func grpcToTree(g *TreeNode, t *rpcbench.TreeNodeImpl) error {
 	if len(g.Children) != len(t.Children) {
 		return errors.New("wrong number of children")
 	}

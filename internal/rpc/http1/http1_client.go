@@ -21,6 +21,7 @@ import (
 type http1Client struct {
 	hc     http.Client
 	isJson bool
+	tree   rpcbench.TreeNodeImpl
 
 	aux        []byte
 	bodyWriter bytes.Buffer
@@ -59,28 +60,31 @@ func (c *http1Client) Add(ctx context.Context, a int64, b int64) (int64, error) 
 	return binutils.ReadInt64(r.Body, c.aux)
 }
 
-func (c *http1Client) MultTreeValues(ctx context.Context, mult int64, tree *rpcbench.TreeNode) error {
+func (c *http1Client) MultTreeValues(ctx context.Context, mult int64, fillArgs func(rpcbench.TreeNode)) (rpcbench.TreeNode, error) {
+	tree := &c.tree
+	tree.Reset()
+	fillArgs(tree)
 	if c.isJson {
 		panic("todo")
 	}
 
 	c.bodyWriter.Reset()
 	if err := binutils.WriteMultTreeRequest(&c.bodyWriter, c.aux, mult, tree); err != nil {
-		return err
+		return nil, err
 	}
 
 	r, err := c.hc.Post(c.treeURL, "application/octet-stream", &c.bodyWriter)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer r.Body.Close()
 	reader := bufio.NewReader(r.Body)
 
 	err = binutils.ReadMultTreeReponse(reader, c.aux, tree)
 	if err != nil {
-		return fmt.Errorf("error reading reply from server: %v", err)
+		return nil, fmt.Errorf("error reading reply from server: %v", err)
 	}
-	return nil
+	return tree, nil
 }
 
 func (c *http1Client) ToHex(ctx context.Context, in, out []byte) error {

@@ -44,26 +44,34 @@ func ClientCallMatrix() []ClientCall {
 }
 
 type testTreePair struct {
-	src, tgt TreeNode
+	// src TreeNode
+	tgt TreeNodeImpl
 }
 
 type benchClient struct {
-	c           Client
-	rng         *rand.Rand
-	rngReader   io.Reader
-	testTrees   []testTreePair
-	hexInBuf    []byte
-	hexOutBuf   []byte
-	hexCheckBuf []byte
+	c              Client
+	rng            *rand.Rand
+	rngReader      io.Reader
+	testTrees      []testTreePair
+	chosenTestTree int
+	hexInBuf       []byte
+	hexOutBuf      []byte
+	hexCheckBuf    []byte
+	fillTreeArgs   func(node TreeNode) // Storing here avoids one alloc per call.
+}
+
+func (bcli *benchClient) fillRequestTree(node TreeNode) {
+	pair := &bcli.testTrees[bcli.chosenTestTree]
+	copyTree(&pair.tgt, node)
 }
 
 type clientsHarness struct {
-	clients []benchClient
+	clients []*benchClient
 }
 
 func newClientHarness(ctx context.Context, saddr string, fac RPCFactory, nbClients int) (*clientsHarness, error) {
 	ch := &clientsHarness{
-		clients: make([]benchClient, 0, nbClients),
+		clients: make([]*benchClient, 0, nbClients),
 	}
 
 	for range nbClients {
@@ -83,30 +91,25 @@ func newClientHarness(ctx context.Context, saddr string, fac RPCFactory, nbClien
 		// First one is shallow (only a single element).
 
 		// Second one is deep and narrow.
-		node := &testTrees[1].src
+		var node TreeNode = &testTrees[1].tgt
 		for range 64 {
-			node.Children = make([]TreeNode, 1)
-			node = &node.Children[0]
+			node.InitChildren(1)
+			node = node.Child(0)
 		}
-		deepClone(&testTrees[1].src, &testTrees[1].tgt)
 
 		// Third one is broad, but shallow.
-		testTrees[2].src.Children = make([]TreeNode, 64)
-		deepClone(&testTrees[2].src, &testTrees[2].tgt)
+		testTrees[2].tgt.InitChildren(64)
 
 		// Fourth is dense (deep and broad).
-		makeDenseTreeNode(&testTrees[3].src, 5, 5)
-		deepClone(&testTrees[3].src, &testTrees[3].tgt)
+		makeDenseTreeNode(&testTrees[3].tgt, 5, 5)
 
 		// Fifth and sixth are random.
-		makeRandomTree(&testTrees[4].src, rng, 6, 6)
-		deepClone(&testTrees[4].src, &testTrees[4].tgt)
-		makeRandomTree(&testTrees[5].src, rng, 6, 6)
-		deepClone(&testTrees[5].src, &testTrees[5].tgt)
+		makeRandomTree(&testTrees[4].tgt, rng, 6, 6)
+		makeRandomTree(&testTrees[5].tgt, rng, 6, 6)
 
 		const hexMaxSize = 8
 
-		bcli := benchClient{
+		bcli := &benchClient{
 			c:           c,
 			rng:         rng,
 			rngReader:   rngReader,
@@ -115,6 +118,7 @@ func newClientHarness(ctx context.Context, saddr string, fac RPCFactory, nbClien
 			hexCheckBuf: make([]byte, hexMaxSize*1024),
 			hexOutBuf:   make([]byte, hexMaxSize*2*1024),
 		}
+		bcli.fillTreeArgs = bcli.fillRequestTree
 		ch.clients = append(ch.clients, bcli)
 	}
 

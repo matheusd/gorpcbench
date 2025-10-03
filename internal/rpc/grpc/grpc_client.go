@@ -14,6 +14,7 @@ import (
 
 type grpcClient struct {
 	conn *grpc.ClientConn
+	tree *TreeNode
 	api  APIClient
 }
 
@@ -30,14 +31,14 @@ func (c *grpcClient) Add(ctx context.Context, a int64, b int64) (int64, error) {
 	return res.Res, nil
 }
 
-func (c *grpcClient) MultTreeValues(ctx context.Context, mult int64, tree *rpcbench.TreeNode) error {
-	reqTree := new(TreeNode)
-	treeToGrpc(tree, reqTree)
-	res, err := c.api.MultTree(ctx, &MultTreeRequest{Mult: mult, Tree: reqTree})
+func (c *grpcClient) MultTreeValues(ctx context.Context, mult int64, fillArgs func(rpcbench.TreeNode)) (rpcbench.TreeNode, error) {
+	tree := c.tree
+	fillArgs(tree)
+	res, err := c.api.MultTree(ctx, &MultTreeRequest{Mult: mult, Tree: tree})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return grpcToTree(res.Tree, tree)
+	return res.Tree, nil
 }
 
 func (c *grpcClient) ToHex(ctx context.Context, in, out []byte) error {
@@ -65,6 +66,7 @@ func newGRPCClient(ctx context.Context, addr string) (*grpcClient, error) {
 	}()
 
 	return &grpcClient{
+		tree: new(TreeNode),
 		conn: conn,
 		api:  api,
 	}, nil

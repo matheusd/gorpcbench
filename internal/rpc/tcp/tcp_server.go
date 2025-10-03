@@ -138,15 +138,19 @@ func (s *tcpServer) Run(ctx context.Context) error {
 		waitErr := connPool.Wait()
 		switch {
 		case acceptErr != nil:
-			return fmt.Errorf("server Accept() errored: %v", acceptErr)
+			return fmt.Errorf("server Accept() errored: %w", acceptErr)
 		case waitErr != nil:
-			return fmt.Errorf("conn wait() errored: %v", waitErr)
+			return fmt.Errorf("conn wait() errored: %w", waitErr)
 		default:
 			return nil
 		}
 	})
 
-	return g.Wait()
+	err := g.Wait()
+	if errors.Is(err, context.Canceled) {
+		err = nil
+	}
+	return err
 }
 
 func newTCPServer(l net.Listener) *tcpServer {

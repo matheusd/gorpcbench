@@ -32,7 +32,7 @@ func WriteInt64(w io.Writer, aux []byte, v int64) error {
 // multiplexing so we always expect the same sequence coming back.
 
 // WriteTree writes the given tree to a writer, in binary format.
-func WriteTree(w io.Writer, aux []byte, tn *rpcbench.TreeNode) error {
+func WriteTree(w io.Writer, aux []byte, tn *rpcbench.TreeNodeImpl) error {
 	if err := WriteInt64(w, aux, tn.Value); err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func WriteTree(w io.Writer, aux []byte, tn *rpcbench.TreeNode) error {
 }
 
 // ReadTree reads the given tree from a reader, in binary format.
-func ReadTree(r io.Reader, aux []byte, tn *rpcbench.TreeNode) error {
+func ReadTree(r io.Reader, aux []byte, tn *rpcbench.TreeNodeImpl) error {
 	var err error
 	tn.Value, err = ReadInt64(r, aux)
 	if err != nil {
@@ -64,7 +64,7 @@ func ReadTree(r io.Reader, aux []byte, tn *rpcbench.TreeNode) error {
 
 // WriteMultTreeRequest writes the request to the MultTreeValues request in
 // binary format.
-func WriteMultTreeRequest(w io.Writer, aux []byte, mult int64, tree *rpcbench.TreeNode) error {
+func WriteMultTreeRequest(w io.Writer, aux []byte, mult int64, tree *rpcbench.TreeNodeImpl) error {
 	if err := WriteInt64(w, aux, mult); err != nil {
 		return err
 	}
@@ -113,6 +113,6 @@ func DoMultTreeRequest(r io.Reader, w io.Writer, aux []byte) error {
 
 // ReadMultTreeReponse reads the response of a binary execution of
 // MultTreeValues, as produced by DoMultTreeRequest.
-func ReadMultTreeReponse(r io.Reader, aux []byte, tn *rpcbench.TreeNode) error {
+func ReadMultTreeReponse(r io.Reader, aux []byte, tn *rpcbench.TreeNodeImpl) error {
 	return ReadTree(r, aux, tn)
 }

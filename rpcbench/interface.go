@@ -19,19 +19,26 @@ type Server interface {
 	Runnable
 }
 
-// TreeNode is a simple nested data structure.
-type TreeNode struct {
-	Value    int64
-	Children []TreeNode
-}
+// TreeNode is an interface to a TreeNode structure. This is an interface (as
+// opposed to a direct struct) to allow RPC systems to use their preferred
+// representation for data.
+//
+// TreeNode values are reused across tests, but not across different clients.
+type TreeNode interface {
+	SetValue(v int64)
+	GetValue() int64
 
-// TotalNodes returns the total number of nodes in this tree.
-func (tn *TreeNode) TotalNodes() int {
-	sum := 1
-	for i := range tn.Children {
-		sum += tn.Children[i].TotalNodes()
-	}
-	return sum
+	// InitChildren should init n new nodes as children of this node.
+	InitChildren(n int)
+	ChildrenCount() int
+
+	// Child should return a reference to child i. It is ok to panic if i is
+	// out of bounds.
+	Child(i int) TreeNode
+
+	// TotalNodes should return the total number of nodes across the
+	// subtree.
+	TotalNodes() int
 }
 
 // Client is the interface to an RPC client with specific functions. If client
@@ -48,10 +55,27 @@ type Client interface {
 
 	// MultTreeValues is a call with a deeply nested data structure.
 	// Servers should traverse the tree, multiply the value of each node in
-	// the tree by the first argument and return the new modified tree. Upon
-	// reply, the client should modify the input tree to match the returned
-	// values.
-	MultTreeValues(context.Context, int64, *TreeNode) error
+	// the tree by the first argument and return the new modified tree.
+	//
+	// Clients need to call the fillArgs function in order to fill a
+	// TreeNode implementation with the values for this specific call.
+	//
+	// This roundabound way of setting args is necessary to ensure every RPC
+	// implementation has a chance to cache the arguments (if possible) and
+	// to be fair(ish) and ensure every implementation sets fields in at
+	// least one structure prior to writing the message to the server.
+	//
+	// The assumption held here is that in production code, the argument
+	// (TreeNode) will already be filled by the app with data from a
+	// database, some computation, a prior RPC call, and so on. But
+	// different RPC implementations may be using different structures to
+	// hold this value, therefore, for benchmarking purposes, we ensure
+	// every implementation requires setting one structure.
+	//
+	// The resulting TreeNode returned by this function MAY be the same one
+	// passed to the fillArgs call (if the implementation is able to reuse
+	// it).
+	MultTreeValues(ctx context.Context, mult int64, fillArgs func(TreeNode)) (TreeNode, error)
 
 	// ToHex is a call with arbitrarily large data. Servers should convert
 	// the input to an hex string. Clients should fill the output slice with

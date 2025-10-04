@@ -52,6 +52,14 @@ func (tn *TreeNodeImpl) TotalNodes() int {
 	return sum
 }
 
+// Mult multiplies every value of the tree by mult.
+func (tn *TreeNodeImpl) Mult(mult int64) {
+	tn.Value *= mult
+	for i := range tn.Children {
+		tn.Children[i].Mult(mult)
+	}
+}
+
 // NewTreeNode returns a new TreeNodeImpl as a TreeNode.
 func NewTreeNode() TreeNode {
 	return &TreeNodeImpl{}

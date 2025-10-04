@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/matheusd/gorpcbench/internal/binutils"
+	"github.com/matheusd/gorpcbench/internal/jsonutils"
+	"github.com/matheusd/gorpcbench/rpcbench"
 )
 
 const (
@@ -37,7 +40,7 @@ func (s *wsServer) runBinaryConn(conn *websocket.Conn) error {
 	nopReplyBuf := []byte{cmdNop}
 	aux := make([]byte, 8)
 	reader := &bufio.Reader{}
-	readHexBuf := make([]byte, 10*1024)
+	readHexBuf := make([]byte, rpcbench.MaxHexEncodeSize)
 	writeHexBuf := make([]byte, len(readHexBuf)*2)
 	for {
 		// Read message from client
@@ -108,8 +111,54 @@ func (s *wsServer) runBinaryConn(conn *websocket.Conn) error {
 	}
 }
 
-func (s *wsServer) runJsonConn(_ *websocket.Conn) error {
-	return errors.New("unimplemented")
+func (s *wsServer) runJsonConn(conn *websocket.Conn) error {
+	var msg jsonutils.Message
+	var addReq jsonutils.AddRequest
+	var addRes jsonutils.AddResponse
+	var multReq jsonutils.MultTreeRequest
+	toHexInBuf := make([]byte, rpcbench.MaxHexEncodeSize)
+	toHexOutBuf := make([]byte, rpcbench.MaxHexEncodeSize*2)
+
+	for {
+		if err := conn.ReadJSON(&msg); err != nil {
+			return err
+		}
+
+		switch msg.Command {
+		case jsonutils.CmdNop:
+			if err := conn.WriteJSON(msg); err != nil {
+				return err
+			}
+
+		case jsonutils.CmdAdd:
+			if err := json.Unmarshal(msg.Payload, &addReq); err != nil {
+				return err
+			}
+			addRes.Res = addReq.A + addReq.B
+			if err := conn.WriteJSON(addRes); err != nil {
+				return err
+			}
+
+		case jsonutils.CmdMultTree:
+			if err := json.Unmarshal(msg.Payload, &multReq); err != nil {
+				return err
+			}
+			multReq.Tree.Mult(multReq.Mult)
+
+			if err := conn.WriteJSON(multReq.Tree); err != nil {
+				return err
+			}
+
+		case jsonutils.CmdToHex:
+			if err := json.Unmarshal(msg.Payload, &toHexInBuf); err != nil {
+				return err
+			}
+			n := hex.Encode(toHexOutBuf, toHexInBuf)
+			if err := conn.WriteJSON(toHexOutBuf[:n]); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func (s *wsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -156,8 +205,8 @@ func (s *wsServer) Run(ctx context.Context) error {
 
 func newWSServer(l net.Listener) *wsServer {
 	upgrader := websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
+		ReadBufferSize:  rpcbench.MaxHexEncodeSize * 2,
+		WriteBufferSize: rpcbench.MaxHexEncodeSize * 2,
 		CheckOrigin: func(r *http.Request) bool {
 			return true // Allow all origins for simplicity
 		},

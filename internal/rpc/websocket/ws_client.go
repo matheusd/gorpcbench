@@ -7,11 +7,14 @@ package websocket
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"net"
+	"net/http"
 
 	"github.com/gorilla/websocket"
 	"github.com/matheusd/gorpcbench/internal/binutils"
+	"github.com/matheusd/gorpcbench/internal/jsonutils"
 	"github.com/matheusd/gorpcbench/rpcbench"
 )
 
@@ -22,9 +25,27 @@ type wsClient struct {
 	c      net.Conn
 	reader *bufio.Reader
 	writer *bufio.Writer
+
+	isJson bool
+	msg    jsonutils.Message
+	outMsg jsonutils.OutMessage
 }
 
 func (c *wsClient) Nop(ctx context.Context) error {
+	if c.isJson {
+		c.outMsg.Command = jsonutils.CmdNop
+		c.outMsg.Payload = nil
+		if err := c.conn.WriteJSON(c.outMsg); err != nil {
+			return fmt.Errorf("unable to write JSON nop: %v", err)
+		}
+
+		if err := c.conn.ReadJSON(&c.msg); err != nil {
+			return fmt.Errorf("unable to read JSON nop: %v", err)
+		}
+
+		return nil
+	}
+
 	rawWriter, err := c.conn.NextWriter(websocket.BinaryMessage)
 	if err != nil {
 		return err
@@ -52,6 +73,21 @@ func (c *wsClient) Nop(ctx context.Context) error {
 }
 
 func (c *wsClient) Add(ctx context.Context, a int64, b int64) (int64, error) {
+	if c.isJson {
+		c.outMsg.Command = jsonutils.CmdAdd
+		c.outMsg.Payload = jsonutils.AddRequest{A: a, B: b}
+		if err := c.conn.WriteJSON(c.outMsg); err != nil {
+			return 0, fmt.Errorf("unable to write JSON add: %v", err)
+		}
+
+		var res jsonutils.AddResponse
+		if err := c.conn.ReadJSON(&res); err != nil {
+			return 0, fmt.Errorf("unable to read JSON add: %v", err)
+		}
+
+		return res.Res, nil
+	}
+
 	rawWriter, err := c.conn.NextWriter(websocket.BinaryMessage)
 	if err != nil {
 		return 0, err
@@ -87,6 +123,22 @@ func (c *wsClient) MultTreeValues(ctx context.Context, mult int64, fillArgs func
 	tree := &c.tree
 	tree.Reset()
 	fillArgs(tree)
+
+	if c.isJson {
+		c.outMsg.Command = jsonutils.CmdMultTree
+		c.outMsg.Payload = jsonutils.MultTreeRequest{Mult: mult, Tree: tree}
+		if err := c.conn.WriteJSON(c.outMsg); err != nil {
+			return nil, fmt.Errorf("unable to write JSON tree: %v", err)
+		}
+		tree.Reset()
+
+		if err := c.conn.ReadJSON(tree); err != nil {
+			return nil, fmt.Errorf("unable to read JSON tree: %v", err)
+		}
+
+		return tree, nil
+	}
+
 	rawWriter, err := c.conn.NextWriter(websocket.BinaryMessage)
 	if err != nil {
 		return nil, err
@@ -121,6 +173,23 @@ func (c *wsClient) MultTreeValues(ctx context.Context, mult int64, fillArgs func
 }
 
 func (c *wsClient) ToHex(ctx context.Context, in, out []byte) error {
+	if c.isJson {
+		c.outMsg.Command = jsonutils.CmdToHex
+		c.outMsg.Payload = in
+
+		if err := c.conn.WriteJSON(c.outMsg); err != nil {
+			return fmt.Errorf("unable to write JSON hex: %v", err)
+		}
+
+		var hexOut []byte
+		if err := c.conn.ReadJSON(&hexOut); err != nil {
+			return fmt.Errorf("unable to read JSON hex: %v", err)
+		}
+		copy(out, hexOut) // Json cannot decode directly into out.
+
+		return nil
+	}
+
 	rawWriter, err := c.conn.NextWriter(websocket.BinaryMessage)
 	if err != nil {
 		return err
@@ -158,9 +227,14 @@ func (c *wsClient) Run(ctx context.Context) error {
 	return c.conn.Close()
 }
 
-func newWSClient(ctx context.Context, addr string) (*wsClient, error) {
+func newWSClient(ctx context.Context, addr string, isJson bool) (*wsClient, error) {
 	url := "ws://" + addr
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, url, nil)
+	var header http.Header
+	if isJson {
+		header = make(http.Header)
+		header.Add("Content-Type", "text/json")
+	}
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, url, header)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +242,8 @@ func newWSClient(ctx context.Context, addr string) (*wsClient, error) {
 	return &wsClient{
 		conn:   conn,
 		aux:    make([]byte, 8),
-		reader: bufio.NewReader(nil),
-		writer: bufio.NewWriter(nil),
+		reader: bufio.NewReaderSize(nil, rpcbench.MaxHexEncodeSize*2),
+		writer: bufio.NewWriterSize(nil, rpcbench.MaxHexEncodeSize*2),
+		isJson: isJson,
 	}, nil
 }

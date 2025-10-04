@@ -103,8 +103,8 @@ func newTCPClient(ctx context.Context, addr string) (*tcpClient, error) {
 	}()
 	return &tcpClient{
 		c:      c,
-		reader: bufio.NewReaderSize(c, 64*1024),
-		writer: bufio.NewWriterSize(c, 64*1024),
+		reader: bufio.NewReaderSize(c, rpcbench.MaxHexEncodeSize*2),
+		writer: bufio.NewWriterSize(c, rpcbench.MaxHexEncodeSize*2),
 		aux:    make([]byte, 8),
 	}, nil
 }

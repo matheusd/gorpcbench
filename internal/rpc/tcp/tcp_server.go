@@ -15,6 +15,7 @@ import (
 	"net"
 
 	"github.com/matheusd/gorpcbench/internal/binutils"
+	"github.com/matheusd/gorpcbench/rpcbench"
 	"github.com/sourcegraph/conc/pool"
 )
 
@@ -27,10 +28,10 @@ func (s *tcpServer) runConn(ctx context.Context, c net.Conn) error {
 	nopReplyBuf := []byte{cmdNop}
 
 	aux := make([]byte, 8)
-	reader := bufio.NewReader(c)
-	writer := bufio.NewWriter(c)
+	reader := bufio.NewReaderSize(c, rpcbench.MaxHexEncodeSize)
+	writer := bufio.NewWriterSize(c, rpcbench.MaxHexEncodeSize*2)
 
-	readHexBuf := make([]byte, 8*1024)
+	readHexBuf := make([]byte, rpcbench.MaxHexEncodeSize)
 	hexEnc := hex.NewEncoder(writer)
 
 	for ctx.Err() == nil {

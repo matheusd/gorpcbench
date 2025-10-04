@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+// MaxHexEncodeSize is the maximum size of a toHex message. This can be
+// considered as the max message size in a particular RPC implementation.
+const MaxHexEncodeSize = 128 * 1024
+
 type ClientCall int
 
 const (
@@ -107,16 +111,14 @@ func newClientHarness(ctx context.Context, saddr string, fac RPCFactory, nbClien
 		makeRandomTree(&testTrees[4].tgt, rng, 6, 6)
 		makeRandomTree(&testTrees[5].tgt, rng, 6, 6)
 
-		const hexMaxSize = 8
-
 		bcli := &benchClient{
 			c:           c,
 			rng:         rng,
 			rngReader:   rngReader,
 			testTrees:   testTrees,
-			hexInBuf:    make([]byte, hexMaxSize*1024),
-			hexCheckBuf: make([]byte, hexMaxSize*1024),
-			hexOutBuf:   make([]byte, hexMaxSize*2*1024),
+			hexInBuf:    make([]byte, MaxHexEncodeSize),
+			hexCheckBuf: make([]byte, MaxHexEncodeSize),
+			hexOutBuf:   make([]byte, MaxHexEncodeSize*2),
 		}
 		bcli.fillTreeArgs = bcli.fillRequestTree
 		ch.clients = append(ch.clients, bcli)

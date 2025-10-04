@@ -26,6 +26,10 @@ var allSystems = []rpcbench.RPCSystem{
 		Initer: websocket.WSFactoryIniter,
 		Notes:  "Websockets-based RPC implementation",
 	}, {
+		Name:   "wsjson",
+		Initer: websocket.WSJsonFactoryIniter,
+		Notes:  "Websockets-based RPC implementation (JSON)",
+	}, {
 		Name:   "grpc",
 		Initer: grpc.GRPCFactoryIniter,
 		Notes:  "gRPC based implementation",

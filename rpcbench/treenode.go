@@ -115,12 +115,12 @@ func treeMatchesForMult(src TreeNode, tgt *TreeNodeImpl, mult int64) bool {
 		return false
 	}
 	if len(tgt.Children) != src.ChildrenCount() {
-		fmt.Println("wrong child count")
+		fmt.Println("wrong child count", len(tgt.Children), src.ChildrenCount())
 		return false
 	}
 	for i := range tgt.Children {
 		if !treeMatchesForMult(src.Child(i), &tgt.Children[i], mult) {
-			fmt.Println("wrong children")
+			fmt.Println("wrong children", i)
 			return false
 		}
 	}

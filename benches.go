@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/matheusd/gorpcbench/internal/rpc/gocapnp"
 	"github.com/matheusd/gorpcbench/internal/rpc/grpc"
 	"github.com/matheusd/gorpcbench/internal/rpc/http1"
 	"github.com/matheusd/gorpcbench/internal/rpc/tcp"
@@ -33,6 +34,10 @@ var allSystems = []rpcbench.RPCSystem{
 		Name:   "grpc",
 		Initer: grpc.GRPCFactoryIniter,
 		Notes:  "gRPC based implementation",
+	}, {
+		Name:   "gocapnp",
+		Initer: gocapnp.GoCapnpIniter,
+		Notes:  "go-CapNProto based implementation",
 	},
 }
 

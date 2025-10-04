@@ -52,7 +52,7 @@ func makeCall(ctx context.Context, bc BenchCase, bcli *benchClient) (int, error)
 	case ClientCallTreeMult:
 		// Pick a random tree and mult and populate the target tree.
 		bcli.chosenTestTree = bcli.rng.IntN(len(bcli.testTrees))
-		// bcli.chosenTestTree = 3
+		// bcli.chosenTestTree = 4
 		mult := bcli.rng.Int64()
 		pair := &bcli.testTrees[bcli.chosenTestTree]
 		populateWithRand(&pair.tgt, bcli.rng)

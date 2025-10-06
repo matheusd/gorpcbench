@@ -5,5 +5,5 @@ A comparative benchmark across multiple RPC systems.
 
 # Results
 
-[Full Last Results](https://matheusd.github.io/gorpcbench)
+[Full Last Results](https://matheusd.github.io/gorpcbench/www/last_benches.html)
 

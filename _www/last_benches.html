@@ -1,0 +1,519 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>RPC Systems Comparison</title>
+    <script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
+    <script src="https://go-echarts.github.io/go-echarts-assets/assets/themes/light.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            scroll-padding-top: 20px;
+        }
+
+        .chart {
+            margin: 20px auto;
+            width: 98%;
+            height: 500px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 1080px;
+            scroll-margin-top: 20px;
+        }
+
+        .chart ~ .chart {
+            margin-top: 50px;
+        }
+
+        .container {
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 20px 0;
+        }
+        
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: move;
+            user-select: none;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: move;
+        }
+        
+        .sidebar-title {
+            font-weight: bold;
+            text-align: center;
+            font-size: 14px;
+            flex-grow: 1;
+        }
+        
+        .minimize-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 5px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .minimize-btn:hover {
+            color: #333;
+        }
+        
+        .sidebar.minimized {
+            width: auto;
+            padding: 5px;
+        }
+        
+        .sidebar.minimized .bench-indicator,
+        .sidebar.minimized .sidebar-title {
+            display: none;
+        }
+        
+        .sidebar.minimized .minimize-btn {
+            transform: rotate(180deg);
+            font-size: 14px;
+            padding: 3px;
+            margin: 0;
+        }
+        
+        .sidebar.minimized .sidebar-header {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .bench-indicator {
+            padding: 5px 10px;
+            border-radius: 4px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .bench-indicator:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .bench-indicator.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+    <script type="text/javascript">
+        // Add resize event handler to make charts responsive
+        window.addEventListener('resize', function() {
+            // Resize all charts when window size changes
+            const charts = document.querySelectorAll('.item');
+            charts.forEach(function(chart) {
+                const instance = echarts.getInstanceByDom(chart);
+                if (instance) {
+                    instance.resize();
+                }
+            });
+        });
+        
+        // Initialize sidebar functionality when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('bench-sidebar');
+            const groups = document.querySelectorAll('.bench-indicator');
+            const chartSections = document.querySelectorAll('.chart-section');
+            const minimizeBtn = document.getElementById('minimize-btn');
+            
+            // Only show sidebar if there are multiple groups
+            if (sidebar && groups.length <= 1) {
+                sidebar.style.display = 'none';
+            }
+            
+            // Make sidebar draggable
+            let isDragging = false;
+            let offsetX, offsetY;
+            
+            function startDrag(e) {
+                // Only start drag if it's the sidebar header or the sidebar itself when minimized
+                if (e.target.closest('.sidebar-header') || 
+                    (sidebar.classList.contains('minimized') && e.target.closest('.sidebar'))) {
+                    isDragging = true;
+                    
+                    // Get the current position of the sidebar
+                    const sidebarRect = sidebar.getBoundingClientRect();
+                    
+                    // Calculate the offset from the mouse position to the sidebar position
+                    offsetX = e.clientX - sidebarRect.left;
+                    offsetY = e.clientY - sidebarRect.top;
+                    
+                    // Prevent text selection during drag
+                    e.preventDefault();
+                }
+            }
+            
+            function drag(e) {
+                if (isDragging) {
+                    // Calculate new position
+                    const x = e.clientX - offsetX;
+                    const y = e.clientY - offsetY;
+                    
+                    // Apply new position
+                    sidebar.style.left = x + 'px';
+                    sidebar.style.top = y + 'px';
+                    sidebar.style.right = 'auto';
+                    sidebar.style.transform = 'none';
+                }
+            }
+            
+            function stopDrag() {
+                isDragging = false;
+            }
+            
+            // Add event listeners for dragging
+            sidebar.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Minimize/maximize sidebar
+            minimizeBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('minimized');
+                this.textContent = sidebar.classList.contains('minimized') ? '◀' : '▶';
+            });
+            
+            // Add click event to each indicator
+            groups.forEach(function(indicator) {
+                indicator.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const targetElement = document.getElementById(targetId);
+                    
+                    if (targetElement) {
+                        // Scroll to the target element
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Update active state
+                        groups.forEach(ind => ind.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // Update active indicator on scroll
+            window.addEventListener('scroll', function() {
+                let currentSection = '';
+                
+                chartSections.forEach(function(section) {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    
+                    if (pageYOffset >= (sectionTop - 100)) {
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+                
+                groups.forEach(function(indicator) {
+                    indicator.classList.remove('active');
+                    if (indicator.getAttribute('data-target') === currentSection) {
+                        indicator.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>RPC Systems Comparison (CPU: 6)</h1>
+    
+
+    
+    
+    
+    <!-- Sidebar for benchmark navigation -->
+    <div id="bench-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Bench Groups</div>
+            <button id="minimize-btn" class="minimize-btn">▶</button>
+        </div>
+        
+        
+        <div class="bench-indicator active" data-target="bench-section-0">
+            nop
+        </div>
+        
+        
+        
+        <div class="bench-indicator" data-target="bench-section-1">
+            add
+        </div>
+        
+        
+        
+        <div class="bench-indicator" data-target="bench-section-2">
+            tree
+        </div>
+        
+        
+        
+        <div class="bench-indicator" data-target="bench-section-3">
+            hex
+        </div>
+        
+        
+    </div>
+    
+    
+    
+    <div id="bench-section-0" class="chart-section">
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="uvHJeYfROCDb" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_uvHJeYfROCDb = echarts.init(document.getElementById('uvHJeYfROCDb'), "white", { renderer: "canvas" });
+    let option_uvHJeYfROCDb = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"32.71"},{"value":"212.07"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"35.00"},{"value":"210.07"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"28.52"},{"value":"123.10"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"5.45"},{"value":"14.39"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"7.07"},{"value":"17.32"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"10.05"},{"value":"25.85"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"nop - Execution Time (us/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_uvHJeYfROCDb.setOption(option_uvHJeYfROCDb);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="PIOKKAJXTAIq" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_PIOKKAJXTAIq = echarts.init(document.getElementById('PIOKKAJXTAIq'), "white", { renderer: "canvas" });
+    let option_PIOKKAJXTAIq = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"5.03"},{"value":"5.10"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"8.42"},{"value":"8.39"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"4.43"},{"value":"4.42"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0.01"},{"value":"0"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"0.12"},{"value":"0.11"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"1.97"},{"value":"1.95"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"nop - Memory Usage (kb/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_PIOKKAJXTAIq.setOption(option_PIOKKAJXTAIq);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="jVpFQaCPCOXl" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_jVpFQaCPCOXl = echarts.init(document.getElementById('jVpFQaCPCOXl'), "white", { renderer: "canvas" });
+    let option_jVpFQaCPCOXl = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"83"},{"value":"84"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"158"},{"value":"158"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"53"},{"value":"53"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0"},{"value":"0"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"4"},{"value":"4"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"18"},{"value":"18"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"nop - Allocations/op","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_jVpFQaCPCOXl.setOption(option_jVpFQaCPCOXl);
+</script>
+
+        </div>
+        
+    </div>
+    
+    <div id="bench-section-1" class="chart-section">
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="TZMiQVKFpJMM" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_TZMiQVKFpJMM = echarts.init(document.getElementById('TZMiQVKFpJMM'), "white", { renderer: "canvas" });
+    let option_TZMiQVKFpJMM = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"31.07"},{"value":"144.99"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"35.48"},{"value":"221.89"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"29.70"},{"value":"163.75"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"5.72"},{"value":"17.85"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"6.86"},{"value":"18.76"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"10.92"},{"value":"31.61"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"add - Execution Time (us/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_TZMiQVKFpJMM.setOption(option_TZMiQVKFpJMM);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="tgnUITJEiCNp" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_tgnUITJEiCNp = echarts.init(document.getElementById('tgnUITJEiCNp'), "white", { renderer: "canvas" });
+    let option_tgnUITJEiCNp = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"5.05"},{"value":"5.02"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"8.73"},{"value":"8.72"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"10.23"},{"value":"10.51"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0.01"},{"value":"0"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"0.12"},{"value":"0.11"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"2.21"},{"value":"2.19"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"add - Memory Usage (kb/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_tgnUITJEiCNp.setOption(option_tgnUITJEiCNp);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="oJDdWALhMSsy" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_oJDdWALhMSsy = echarts.init(document.getElementById('oJDdWALhMSsy'), "white", { renderer: "canvas" });
+    let option_oJDdWALhMSsy = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"85"},{"value":"85"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"168"},{"value":"168"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"79"},{"value":"79"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0"},{"value":"0"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"4"},{"value":"4"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"26"},{"value":"26"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"add - Allocations/op","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_oJDdWALhMSsy.setOption(option_oJDdWALhMSsy);
+</script>
+
+        </div>
+        
+    </div>
+    
+    <div id="bench-section-2" class="chart-section">
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="ndrPvVVDDZPW" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_ndrPvVVDDZPW = echarts.init(document.getElementById('ndrPvVVDDZPW'), "white", { renderer: "canvas" });
+    let option_ndrPvVVDDZPW = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"285.46"},{"value":"984.85"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"263.42"},{"value":"793.72"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"67.65"},{"value":"253.93"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"25.11"},{"value":"83.69"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"29.86"},{"value":"100.96"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"829.22"},{"value":"2288.36"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"tree - Execution Time (us/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_ndrPvVVDDZPW.setOption(option_ndrPvVVDDZPW);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="TgJkABDCXVLO" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_TgJkABDCXVLO = echarts.init(document.getElementById('TgJkABDCXVLO'), "white", { renderer: "canvas" });
+    let option_TgJkABDCXVLO = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"93.85"},{"value":"93.61"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"155.64"},{"value":"198.21"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"23.13"},{"value":"23.62"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0.05"},{"value":"0.00"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"0.18"},{"value":"0.11"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"261.54"},{"value":"266.87"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"tree - Memory Usage (kb/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_TgJkABDCXVLO.setOption(option_TgJkABDCXVLO);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="FgYlkAMGiWMt" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_FgYlkAMGiWMt = echarts.init(document.getElementById('FgYlkAMGiWMt'), "white", { renderer: "canvas" });
+    let option_FgYlkAMGiWMt = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"1459"},{"value":"1437"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"2647"},{"value":"2656"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"85"},{"value":"86"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0"},{"value":"0"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"4"},{"value":"4"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"554"},{"value":"527"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"tree - Allocations/op","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_FgYlkAMGiWMt.setOption(option_FgYlkAMGiWMt);
+</script>
+
+        </div>
+        
+    </div>
+    
+    <div id="bench-section-3" class="chart-section">
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="EpGUUXtufpJK" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_EpGUUXtufpJK = echarts.init(document.getElementById('EpGUUXtufpJK'), "white", { renderer: "canvas" });
+    let option_EpGUUXtufpJK = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"186.24"},{"value":"609.57"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"572.28"},{"value":"1230.13"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"255.54"},{"value":"721.24"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"117.72"},{"value":"336.02"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"159.25"},{"value":"451.85"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"1018.05"},{"value":"3210.68"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"hex - Execution Time (us/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_EpGUUXtufpJK.setOption(option_EpGUUXtufpJK);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="SCOFNfAUzGlY" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_SCOFNfAUzGlY = echarts.init(document.getElementById('SCOFNfAUzGlY'), "white", { renderer: "canvas" });
+    let option_SCOFNfAUzGlY = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"2111.35"},{"value":"645.07"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"687.11"},{"value":"319.65"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"1538.74"},{"value":"545.20"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"3340.42"},{"value":"1170.20"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"2469.15"},{"value":"870.24"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"386.24"},{"value":"122.47"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"hex - Throughput (MB/s)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_SCOFNfAUzGlY.setOption(option_SCOFNfAUzGlY);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="HAKunXswDFVh" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_HAKunXswDFVh = echarts.init(document.getElementById('HAKunXswDFVh'), "white", { renderer: "canvas" });
+    let option_HAKunXswDFVh = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"139.25"},{"value":"150.60"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"354.45"},{"value":"433.57"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"67.78"},{"value":"68.77"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0.19"},{"value":"0"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"0.46"},{"value":"0.11"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"1033.66"},{"value":"1258.55"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"hex - Memory Usage (kb/op)","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_HAKunXswDFVh.setOption(option_HAKunXswDFVh);
+</script>
+
+        </div>
+        
+        <div class='chart'>
+            
+    
+    <div class="container">
+    <div class="item" id="sOTnSCILNmAf" style="width:100%;height:500px;"></div>
+</div><script type="text/javascript">
+    "use strict";
+    let goecharts_sOTnSCILNmAf = echarts.init(document.getElementById('sOTnSCILNmAf'), "white", { renderer: "canvas" });
+    let option_sOTnSCILNmAf = {"color":["#5470C6","#3BA272","#FC8452","#73C0DE","#EE6666","#FAC858","#9A60B4","#EA7CCC","#91CC75","#FF9F7F","#3E5A9E","#2E7D32","#EF6C00","#7E57C2","#F9A825","#6A8ACF","#4CAF50","#FF8F00","#AB47BC","#FFEB3B","#2B4E72","#1B5E20","#D84315","#512DA8","#F57F17","#4A90E2","#66BB6A","#FF5722","#BA68C8","#FFF176","#1E3A5F","#00695C","#BF360C","#673AB7","#C0CA33","#7FB3D5","#81C784","#FFAB91","#E040FB","#DCE775","#335C8A","#388E3C","#E64A19","#9575CD","#78909C","#5C9EAD","#AED581","#FF7043","#F06292","#A1887F"],"grid":[{"left":"3%","top":"15%","right":"3%","bottom":"3%","containLabel":true}],"legend":{"show":true,"left":"center","top":"7%","itemWidth":10,"itemHeight":10,"textStyle":{"fontSize":12}},"series":[{"name":"gocapnp","type":"bar","data":[{"value":"87"},{"value":"87"}],"itemStyle":{"color":"#5470C6"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"grpc","type":"bar","data":[{"value":"182"},{"value":"185"}],"itemStyle":{"color":"#3BA272"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"http1","type":"bar","data":[{"value":"149"},{"value":"148"}],"itemStyle":{"color":"#FC8452"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"tcp","type":"bar","data":[{"value":"0"},{"value":"0"}],"itemStyle":{"color":"#73C0DE"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"ws","type":"bar","data":[{"value":"4"},{"value":"4"}],"itemStyle":{"color":"#EE6666"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}},{"name":"wsjson","type":"bar","data":[{"value":"34"},{"value":"36"}],"itemStyle":{"color":"#FAC858"},"label":{"show":true,"fontSize":10,"position":"top","formatter":"{c}"}}],"title":{"text":"hex - Allocations/op","left":"2%","top":"1%"},"toolbox":{"show":true,"right":"2%","feature":{"saveAsImage":{"show":true,"type":"png","title":"Save"}}},"tooltip":{},"xAxis":[{"data":["parallel","sequential"]}],"yAxis":[{"splitLine":{"show":true},"axisLabel":{"show":true,"showMinLabel":null,"showMaxLabel":null}}]}
+
+    goecharts_sOTnSCILNmAf.setOption(option_sOTnSCILNmAf);
+</script>
+
+        </div>
+        
+    </div>
+    
+
+    <footer style="text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 14px; color: #666;">
+        Generated by <a alt="Vizb" target="_blank" href="https://github.com/goptics/vizb" style="color: #666; text-decoration: none; font-weight: bold;">Vizb</a> | Made with <span style="color: #e25555;">❤</span> -  <a alt="Goptics" target="_blank" href="https://github.com/goptics" style="color: #666; text-decoration: none; font-weight: bold;">Goptics</a> &copy; 2025
+    </footer>
+</body>
+</html>

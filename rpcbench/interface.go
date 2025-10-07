@@ -25,11 +25,17 @@ type Server interface {
 //
 // TreeNode values are reused across tests, but not across different clients.
 type TreeNode interface {
+	// SetValue should set the int value of the node.
 	SetValue(v int64)
+
+	// GetValue should return the int value of the node.
 	GetValue() int64
 
 	// InitChildren should init n new nodes as children of this node.
 	InitChildren(n int)
+
+	// ChildrenCount should return the number of direct children of this
+	// node.
 	ChildrenCount() int
 
 	// Child should return a reference to child i. It is ok to panic if i is
@@ -53,12 +59,13 @@ type Client interface {
 	// return their sum.
 	Add(context.Context, int64, int64) (int64, error)
 
-	// MultTreeValues is a call with a deeply nested data structure.
-	// Servers should traverse the tree, multiply the value of each node in
-	// the tree by the first argument and return the new modified tree.
+	// MultTreeValues is a call with a deeply nested data structure. Servers
+	// should traverse the tree, multiply the value of each node in the tree
+	// by the first argument and return the new modified tree.
 	//
-	// Clients need to call the fillArgs function in order to fill a
-	// TreeNode implementation with the values for this specific call.
+	// Clients need to call the fillArgs function so that the test harness
+	// will fill a TreeNode implementation with the values for this specific
+	// call.
 	//
 	// This roundabound way of setting args is necessary to ensure every RPC
 	// implementation has a chance to cache the arguments (if possible) and
@@ -69,8 +76,11 @@ type Client interface {
 	// (TreeNode) will already be filled by the app with data from a
 	// database, some computation, a prior RPC call, and so on. But
 	// different RPC implementations may be using different structures to
-	// hold this value, therefore, for benchmarking purposes, we ensure
-	// every implementation requires setting one structure.
+	// hold this value (e.g. codegen RPC systems such as gRPC will each use
+	// a different structure). Therefore, for benchmarking purposes, we
+	// ensure every implementation passes one struct for writing by the
+	// harness (to emulate the application constructing the argument object
+	// in that RPC system's native type).
 	//
 	// The resulting TreeNode returned by this function MAY be the same one
 	// passed to the fillArgs call (if the implementation is able to reuse
@@ -99,4 +109,5 @@ type RPCFactory interface {
 	NewClient(context.Context, string) (Client, error)
 }
 
+// Signature for a func that initializes an RPCFactory.
 type FactoryIniter func() RPCFactory

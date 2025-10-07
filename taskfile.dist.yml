@@ -21,6 +21,12 @@ tasks:
     cmds: 
       - vizb www/last_benches.txt  -t us -p "/w/n/s" -m KB -n "RPC Systems Comparison"  -o www/last_benches.html
 
+  report:
+    desc: Run full benchmark and regenerate report HTML.
+    cmds:
+      - task runfullbench
+      - task vizfullbench
+
   filter-fb-to-main-imgs: 
     desc: Helper to generate a separate viz HTML with a subset of benches to extract the images for README.
     cmds:

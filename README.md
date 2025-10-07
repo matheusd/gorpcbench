@@ -101,21 +101,21 @@ a separate connection to the server.
 Note that overlaying a JSON encoding for messages can only reduce performance,
 so that scenario is not currently tested for this RPC.
 
-# Websocket
+## Websocket
 
 This is a simple, hand-written, custom RPC system running over a websocket endpoint.
 
 Two serialization protocols are supported: the same binary format as used in the
 TCP/HTTP1 implementations and JSON-encoded messages.
 
-# gRPC
+## gRPC
 
 This is a [gRPC-based](https://pkg.go.dev/google.golang.org/grpc) implementation.
 
 As of this version, this is the most straightforward implementation, for both
 client and server.
 
-# Go-CapNProto
+## Go-CapNProto
 
 This is a [Go-CapNProto based](https://github.com/capnproto/go-capnp)
 implementation.
@@ -123,4 +123,25 @@ implementation.
 > [!WARNING]
 > Some configurations of the hex test make this system fail (grep for GOCAPNPHEXBUG).
 > Make sure to evaluate its fitness for your use-case.
+
+
+# Generating the Report
+
+Using [task](https://taskfile.dev) as task runner and [vizb](https://github.com/goptics/vizb)
+to generate the report (those need to be installed):
+
+```shell
+$ task report
+
+
+# Adding New Systems
+
+This is a rough outline of the steps necessary to adding a new RPC system to test:
+
+- Start a new implementation in `internal/rpc/<target-system>`.
+  - `<sys>_client.go` for client code, implementing `rpcbench.Client`.
+  - `<sys>_server.go` for server code, implementing `rpcbench.Server`.
+  - `<sys>_factory.go` for the factory object to init clients and servers.
+- Add an entry to the `all_systems` var in `benches.go`.
+- Describe the system in the README.
 

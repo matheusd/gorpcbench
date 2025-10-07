@@ -10,13 +10,13 @@ Inspired by [goserbench](https://github.com/alecthomas/go_serialization_benchmar
 A quick look at some of the most important results. Also check the [latest full results](https://matheusd.github.io/gorpcbench/www/last_benches.html),
 an explanation of the [tested workloads](#test-workloads) and of the available [RPC systems](#tested-rpc-systems).
 
-![Nop call overhead](www/nop-ops-parallel.png)
+![Nop call overhead](www/nop-latency.png)
 _The time overhead of performing a single round-trip, no-op call (lower is better)._
 
-![Tree struct serialization mem overhead](www/tree-mem-sequential.png)
+![Tree struct serialization mem overhead](www/tree-mem.png)
 _The average memory cost incurred when performing a call that involves structures of various depths (lower is better)._
 
-![Throughput in parallel setting](www/hex-throughput-parallel.png)
+![Throughput in parallel setting](www/hex-throughput.png)
 _The average throughput when performing a call that sends raw bytes (higher is better)._
 
 

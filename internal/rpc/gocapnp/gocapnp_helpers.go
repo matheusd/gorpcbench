@@ -1,6 +1,8 @@
 package gocapnp
 
-import "github.com/matheusd/gorpcbench/rpcbench"
+import (
+	"github.com/matheusd/gorpcbench/rpcbench"
+)
 
 func multTree(mult int64, t TreeNode) {
 	t.SetValue(t.Value() * mult)
@@ -14,20 +16,23 @@ func multTree(mult int64, t TreeNode) {
 	}
 }
 
-func copyTree(src, tgt TreeNode) {
+func copyTree(src, tgt TreeNode) error {
 	tgt.SetValue(src.Value())
 	srcChildren, err := src.Children()
 	if err != nil {
-		return
+		return err
 	}
 
 	tgtChildren, err := tgt.NewChildren(int32(srcChildren.Len()))
 	if err != nil {
-		return
+		return err
 	}
 	for i := range srcChildren.Len() {
-		copyTree(srcChildren.At(i), tgtChildren.At(i))
+		if err := copyTree(srcChildren.At(i), tgtChildren.At(i)); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // The following functions are handwritten adapters necessary by the interfaces

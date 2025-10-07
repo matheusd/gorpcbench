@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"runtime"
 	"testing"
 )
@@ -54,8 +55,8 @@ func makeCall(ctx context.Context, bc BenchCase, bcli *benchClient) (int, error)
 		bcli.chosenTestTree = bcli.rng.IntN(len(bcli.testTrees))
 		// bcli.chosenTestTree = 4
 		mult := bcli.rng.Int64()
-		pair := &bcli.testTrees[bcli.chosenTestTree]
-		populateWithRand(&pair.tgt, bcli.rng)
+		tgt := &bcli.testTrees[bcli.chosenTestTree]
+		populateWithRand(tgt, bcli.rng)
 
 		// Execute the call.
 		res, err := bcli.c.MultTreeValues(ctx, mult, bcli.fillTreeArgs)
@@ -64,11 +65,14 @@ func makeCall(ctx context.Context, bc BenchCase, bcli *benchClient) (int, error)
 		}
 
 		// Check if result matches expected.
-		if !treeMatchesForMult(res, &pair.tgt, mult) {
-			fmt.Println("res")
-			PrintTreeNode(res, 1, "")
-			fmt.Println("target")
-			PrintTreeNode(&pair.tgt, mult, "")
+		if !treeMatchesForMult(res, tgt, mult) {
+			fr, _ := os.Create("/tmp/res")
+			PrintTreeNode(fr, res, 1, "")
+			fr.Close()
+			ft, _ := os.Create("/tmp/target")
+			PrintTreeNode(ft, tgt, mult, "")
+			ft.Close()
+
 			return 0, errors.New("mismatch in request and response trees")
 		}
 

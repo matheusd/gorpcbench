@@ -47,16 +47,11 @@ func ClientCallMatrix() []ClientCall {
 	return []ClientCall{ClientCallNop, ClientCallAdd, ClientCallTreeMult, ClientCallToHex}
 }
 
-type testTreePair struct {
-	// src TreeNode
-	tgt TreeNodeImpl
-}
-
 type benchClient struct {
 	c              Client
 	rng            *rand.Rand
 	rngReader      io.Reader
-	testTrees      []testTreePair
+	testTrees      []TreeNodeImpl
 	chosenTestTree int
 	hexInBuf       []byte
 	hexOutBuf      []byte
@@ -65,8 +60,8 @@ type benchClient struct {
 }
 
 func (bcli *benchClient) fillRequestTree(node TreeNode) {
-	pair := &bcli.testTrees[bcli.chosenTestTree]
-	copyTree(&pair.tgt, node)
+	tgt := &bcli.testTrees[bcli.chosenTestTree]
+	copyTree(tgt, node)
 }
 
 type clientsHarness struct {
@@ -78,38 +73,39 @@ func newClientHarness(ctx context.Context, saddr string, fac RPCFactory, nbClien
 		clients: make([]*benchClient, 0, nbClients),
 	}
 
-	for range nbClients {
+	for i := range nbClients {
 		c, err := fac.NewClient(ctx, saddr)
 		if err != nil {
 			return nil, err
 		}
 
-		rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), 0))
+		// Deterministic rng per client.
+		rng := rand.New(rand.NewPCG(0x01020304, uint64(i)))
 		var chachaseed [32]byte
 		binary.LittleEndian.PutUint64(chachaseed[:], rng.Uint64())
 		rngReader := rand.NewChaCha8(chachaseed)
 
 		// Initialize test trees.
-		testTrees := make([]testTreePair, 6)
+		testTrees := make([]TreeNodeImpl, 6)
 
-		// First one is shallow (only a single element).
+		// First one is only a single element.
 
 		// Second one is deep and narrow.
-		var node TreeNode = &testTrees[1].tgt
+		var node TreeNode = &testTrees[1]
 		for range 64 {
 			node.InitChildren(1)
 			node = node.Child(0)
 		}
 
 		// Third one is broad, but shallow.
-		testTrees[2].tgt.InitChildren(64)
+		testTrees[2].InitChildren(64)
 
 		// Fourth is dense (deep and broad).
-		makeDenseTreeNode(&testTrees[3].tgt, 5, 5)
+		makeDenseTreeNode(&testTrees[3], 5, 6)
 
 		// Fifth and sixth are random.
-		makeRandomTree(&testTrees[4].tgt, rng, 5, 5) // CapNProto bugs after 5x5
-		makeRandomTree(&testTrees[5].tgt, rng, 5, 5)
+		makeRandomTree(&testTrees[4], rng, 8, 5)
+		makeRandomTree(&testTrees[5], rng, 8, 5)
 
 		bcli := &benchClient{
 			c:           c,

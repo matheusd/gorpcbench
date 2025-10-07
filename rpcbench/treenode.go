@@ -2,6 +2,7 @@ package rpcbench
 
 import (
 	"fmt"
+	"io"
 	"math/rand/v2"
 )
 
@@ -127,9 +128,9 @@ func treeMatchesForMult(src TreeNode, tgt *TreeNodeImpl, mult int64) bool {
 	return true
 }
 
-func PrintTreeNode(t TreeNode, mult int64, prefix string) {
-	fmt.Println(prefix, t.GetValue()*mult)
+func PrintTreeNode(w io.Writer, t TreeNode, mult int64, prefix string) {
+	fmt.Fprintln(w, prefix, t.GetValue()*mult)
 	for i := range t.ChildrenCount() {
-		PrintTreeNode(t.Child(i), mult, prefix+"    ")
+		PrintTreeNode(w, t.Child(i), mult, prefix+"    ")
 	}
 }

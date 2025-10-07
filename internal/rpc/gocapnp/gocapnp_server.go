@@ -44,7 +44,6 @@ func (s *gocapnpServer) MultTree(_ context.Context, call API_multTree) error {
 	if err != nil {
 		return err
 	}
-
 	multTree(call.Args().Mult(), tree)
 
 	res, err := call.AllocResults()
@@ -64,7 +63,9 @@ func (s *gocapnpServer) MultTree(_ context.Context, call API_multTree) error {
 	if err != nil {
 		return err
 	}
-	copyTree(tree, resTree)
+	if err := copyTree(tree, resTree); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -27,10 +27,9 @@ tasks:
       - task runfullbench
       - task vizfullbench
 
-  filter-fb-to-main-imgs: 
-    desc: Helper to generate a separate viz HTML with a subset of benches to extract the images for README.
+  main-result-imgs: 
+    desc: Helper to plot images for the main results.
     cmds:
-      - grep -E "(seq.*\/nop|seq.*\/tree|par.*\/hex)" www/last_benches.txt > /tmp/bench.txt
-      - vizb /tmp/bench.txt  -t us -p "/w/n/s" -m KB -n "RPC Systems Comparison"  -o /tmp/bench.html
-      - firefox /tmp/bench.html
+      - grep -E "(seq.*/nop|seq.*/tree|par.*/hex)" www/last_benches.txt > /tmp/bench.txt
+      - python benchplot.py </tmp/bench.txt
 

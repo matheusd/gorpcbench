@@ -151,6 +151,7 @@ to generate the report (those need to be installed):
 
 ```shell
 $ task report
+```
 
 
 # Adding New Systems

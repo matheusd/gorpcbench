@@ -104,8 +104,8 @@ func newClientHarness(ctx context.Context, saddr string, fac RPCFactory, nbClien
 		makeDenseTreeNode(&testTrees[3], 5, 6)
 
 		// Fifth and sixth are random.
-		makeRandomTree(&testTrees[4], rng, 8, 5)
-		makeRandomTree(&testTrees[5], rng, 8, 5)
+		makeRandomTree(&testTrees[4], rng, 8, 5) // GOCAPNPHEXBUG: Using 10,10 here,
+		makeRandomTree(&testTrees[5], rng, 8, 5) // crashes the Go-CapNProto implementation.
 
 		bcli := &benchClient{
 			c:           c,

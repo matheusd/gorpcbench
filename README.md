@@ -120,3 +120,7 @@ client and server.
 This is a [Go-CapNProto based](https://github.com/capnproto/go-capnp)
 implementation.
 
+> [!WARNING]
+> Some configurations of the hex test make this system fail (grep for GOCAPNPHEXBUG).
+> Make sure to evaluate its fitness for your use-case.
+

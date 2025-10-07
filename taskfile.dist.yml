@@ -1,0 +1,30 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  quickbench: 
+    desc: Quick sanity check of benchmarks.
+    cmds: 
+      - go test -run Bench -bench Bench -benchtime 100ms
+  
+  runfullbench: 
+    desc: Run full benchmark for producing results.
+    cmds: 
+      - go test -run Bench -bench Bench -benchtime 3s | tee www/last_benches.txt
+
+  vizfullbench: 
+    desc: Generate results HTML from last full benchmark run.
+    cmds: 
+      - vizb www/last_benches.txt  -t us -p "/w/n/s" -m KB -n "RPC Systems Comparison"  -o www/last_benches.html
+
+  filter-fb-to-main-imgs: 
+    desc: Helper to generate a separate viz HTML with a subset of benches to extract the images for README.
+    cmds:
+      - grep -E "(seq.*\/nop|seq.*\/tree|par.*\/hex)" www/last_benches.txt > /tmp/bench.txt
+      - vizb /tmp/bench.txt  -t us -p "/w/n/s" -m KB -n "RPC Systems Comparison"  -o /tmp/bench.html
+      - firefox /tmp/bench.html
+

@@ -4,6 +4,8 @@ A comparative benchmark of multiple RPC systems.
 
 Inspired by [goserbench](https://github.com/alecthomas/go_serialization_benchmarks).
 
+[Acompanying blog post](https://matheusd.com/post/go-rpc-benchmarks/).
+
 
 # Results
 

@@ -12,6 +12,7 @@ import (
 
 func BenchmarkRPC(b *testing.B) {
 	matrix := fullTestMatrix()
+
 	for _, bc := range matrix {
 		b.Run(bc.Name(), func(b *testing.B) {
 			err := rpcbench.RunCase(b, bc)

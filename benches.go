@@ -8,6 +8,7 @@ import (
 	"github.com/matheusd/gorpcbench/internal/rpc/gocapnp"
 	"github.com/matheusd/gorpcbench/internal/rpc/grpc"
 	"github.com/matheusd/gorpcbench/internal/rpc/http1"
+	"github.com/matheusd/gorpcbench/internal/rpc/mdcapnp"
 	"github.com/matheusd/gorpcbench/internal/rpc/tcp"
 	"github.com/matheusd/gorpcbench/internal/rpc/websocket"
 	"github.com/matheusd/gorpcbench/rpcbench"
@@ -38,6 +39,14 @@ var allSystems = []rpcbench.RPCSystem{
 		Name:   "gocapnp",
 		Initer: gocapnp.GoCapnpIniter,
 		Notes:  "go-CapNProto based implementation",
+	}, {
+		Name:   "mdcapnp",
+		Initer: mdcapnp.MDCapNProtoFactoryIniter,
+		Notes:  "MdCapNProto based implementation",
+	}, {
+		Name:   "mdcapl0",
+		Initer: mdcapnp.MDCapNProtoLevel0FactoryIniter,
+		Notes:  "Level 0 MdCapNProto based implementation",
 	},
 }
 

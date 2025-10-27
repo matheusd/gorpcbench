@@ -26,6 +26,7 @@ func (c *tcpClient) Nop(ctx context.Context) error {
 	if err := c.writer.WriteByte(cmdNop); err != nil {
 		return err
 	}
+
 	if err := c.writer.Flush(); err != nil {
 		return err
 	}

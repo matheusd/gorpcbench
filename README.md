@@ -145,6 +145,14 @@ implementation.
 > Some configurations of the hex test make this system fail (grep for GOCAPNPHEXBUG).
 > Make sure to evaluate its fitness for your use-case.
 
+## MdCapNProto
+
+This is a custom re-implementation of CapNProto in Go ([MdCapNProto](https://github.com/matheusd/mdcapnp)).
+
+The "l0" (level 0) variant uses a client that does not support remote promises
+or multiplexing multiple calls through the same connection, while the standard
+variant supports it.
+
 
 # Generating the Report
 

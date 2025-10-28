@@ -14,7 +14,7 @@ tasks:
   runfullbench: 
     desc: Run full benchmark for producing results.
     cmds: 
-      - go test -run Bench -bench Bench -benchtime 3s | tee www/last_benches.txt
+      - go test -run Bench -bench Bench -benchtime 5s | tee www/last_benches.txt
 
   vizfullbench: 
     desc: Generate results HTML from last full benchmark run.

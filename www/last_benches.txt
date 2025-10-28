@@ -2,53 +2,69 @@ goos: linux
 goarch: amd64
 pkg: github.com/matheusd/gorpcbench
 cpu: AMD Ryzen 3 2200G with Radeon Vega Graphics    
-BenchmarkRPC/sequential/nop/tcp-6         	  249904	     14608 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRPC/sequential/nop/http1-6       	   28398	    126426 ns/op	    4535 B/op	      53 allocs/op
-BenchmarkRPC/sequential/nop/ws-6          	  211226	     17341 ns/op	     112 B/op	       4 allocs/op
-BenchmarkRPC/sequential/nop/wsjson-6      	  138801	     25779 ns/op	    1992 B/op	      18 allocs/op
-BenchmarkRPC/sequential/nop/grpc-6        	   16844	    211841 ns/op	    8604 B/op	     158 allocs/op
-BenchmarkRPC/sequential/nop/gocapnp-6     	   24532	    144957 ns/op	    5190 B/op	      83 allocs/op
-BenchmarkRPC/sequential/add/tcp-6         	  246338	     16133 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRPC/sequential/add/http1-6       	   20461	    171581 ns/op	   10725 B/op	      79 allocs/op
-BenchmarkRPC/sequential/add/ws-6          	  199093	     17870 ns/op	     112 B/op	       4 allocs/op
-BenchmarkRPC/sequential/add/wsjson-6      	  113847	     31595 ns/op	    2240 B/op	      26 allocs/op
-BenchmarkRPC/sequential/add/grpc-6        	   16588	    216580 ns/op	    8931 B/op	     168 allocs/op
-BenchmarkRPC/sequential/add/gocapnp-6     	   24459	    147016 ns/op	    5181 B/op	      85 allocs/op
-BenchmarkRPC/sequential/tree/tcp-6        	    8557	    350919 ns/op	     146 B/op	       0 allocs/op
-BenchmarkRPC/sequential/tree/http1-6      	    5688	    552202 ns/op	   25280 B/op	      92 allocs/op
-BenchmarkRPC/sequential/tree/ws-6         	    7257	    424726 ns/op	     285 B/op	       5 allocs/op
-BenchmarkRPC/sequential/tree/wsjson-6     	     286	  11933114 ns/op	 1429850 B/op	    2596 allocs/op
-BenchmarkRPC/sequential/tree/grpc-6       	    1186	   2600636 ns/op	  814056 B/op	   12182 allocs/op
-BenchmarkRPC/sequential/tree/gocapnp-6    	     741	   4493835 ns/op	  489272 B/op	    7101 allocs/op
-BenchmarkRPC/sequential/hex/tcp-6         	   10000	    335123 ns/op	1173.35 MB/s	       0 B/op	       0 allocs/op
-BenchmarkRPC/sequential/hex/http1-6       	    4404	    721569 ns/op	 544.95 MB/s	   69769 B/op	     148 allocs/op
-BenchmarkRPC/sequential/hex/ws-6          	    6886	    446795 ns/op	 880.08 MB/s	     112 B/op	       4 allocs/op
-BenchmarkRPC/sequential/hex/wsjson-6      	    1216	   3201229 ns/op	 122.83 MB/s	 1240915 B/op	      35 allocs/op
-BenchmarkRPC/sequential/hex/grpc-6        	    2558	   1277739 ns/op	 307.74 MB/s	  425793 B/op	     185 allocs/op
-BenchmarkRPC/sequential/hex/gocapnp-6     	    5841	    612462 ns/op	 642.02 MB/s	  155321 B/op	      87 allocs/op
-BenchmarkRPC/parallel/nop/tcp-6           	  536085	      6455 ns/op	      24 B/op	       0 allocs/op
-BenchmarkRPC/parallel/nop/http1-6         	  139087	     22968 ns/op	    4569 B/op	      53 allocs/op
-BenchmarkRPC/parallel/nop/ws-6            	  493718	      7608 ns/op	     144 B/op	       4 allocs/op
-BenchmarkRPC/parallel/nop/wsjson-6        	  280863	     10747 ns/op	    2048 B/op	      18 allocs/op
-BenchmarkRPC/parallel/nop/grpc-6          	   90254	     34955 ns/op	    8672 B/op	     158 allocs/op
-BenchmarkRPC/parallel/nop/gocapnp-6       	  105538	     33602 ns/op	    5279 B/op	      83 allocs/op
-BenchmarkRPC/parallel/add/tcp-6           	  569538	      5860 ns/op	      23 B/op	       0 allocs/op
-BenchmarkRPC/parallel/add/http1-6         	  102804	     29327 ns/op	   10522 B/op	      79 allocs/op
-BenchmarkRPC/parallel/add/ws-6            	  518364	      6777 ns/op	     142 B/op	       4 allocs/op
-BenchmarkRPC/parallel/add/wsjson-6        	  271884	     11901 ns/op	    2298 B/op	      26 allocs/op
-BenchmarkRPC/parallel/add/grpc-6          	  100242	     38121 ns/op	    8990 B/op	     168 allocs/op
-BenchmarkRPC/parallel/add/gocapnp-6       	  106665	     32278 ns/op	    5285 B/op	      85 allocs/op
-BenchmarkRPC/parallel/tree/tcp-6          	   30702	    124503 ns/op	     657 B/op	       2 allocs/op
-BenchmarkRPC/parallel/tree/http1-6        	   19377	    182485 ns/op	   25275 B/op	      94 allocs/op
-BenchmarkRPC/parallel/tree/ws-6           	   25701	    137129 ns/op	     998 B/op	       6 allocs/op
-BenchmarkRPC/parallel/tree/wsjson-6       	    1120	   3033138 ns/op	 1096196 B/op	    2658 allocs/op
-BenchmarkRPC/parallel/tree/grpc-6         	    3591	   1066522 ns/op	  723849 B/op	   12242 allocs/op
-BenchmarkRPC/parallel/tree/gocapnp-6      	    2878	   1338921 ns/op	  424096 B/op	    6690 allocs/op
-BenchmarkRPC/parallel/hex/tcp-6           	   25881	    130544 ns/op	3012.13 MB/s	     511 B/op	       0 allocs/op
-BenchmarkRPC/parallel/hex/http1-6         	   12980	    277431 ns/op	1417.35 MB/s	   69525 B/op	     150 allocs/op
-BenchmarkRPC/parallel/hex/ws-6            	   18385	    182146 ns/op	2158.80 MB/s	     974 B/op	       5 allocs/op
-BenchmarkRPC/parallel/hex/wsjson-6        	    3136	   1132702 ns/op	 347.15 MB/s	 1065521 B/op	      41 allocs/op
-BenchmarkRPC/parallel/hex/grpc-6          	    5842	    627932 ns/op	 626.21 MB/s	  363113 B/op	     186 allocs/op
-BenchmarkRPC/parallel/hex/gocapnp-6       	   14043	    215286 ns/op	1826.48 MB/s	  143547 B/op	      88 allocs/op
+BenchmarkRPC/sequential/nop/tcp-6         	  442826	     14052 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRPC/sequential/nop/http1-6       	   46791	    126330 ns/op	    4534 B/op	      53 allocs/op
+BenchmarkRPC/sequential/nop/ws-6          	  368311	     16974 ns/op	     112 B/op	       4 allocs/op
+BenchmarkRPC/sequential/nop/wsjson-6      	  232016	     25508 ns/op	    1992 B/op	      18 allocs/op
+BenchmarkRPC/sequential/nop/grpc-6        	   26328	    217065 ns/op	    8599 B/op	     158 allocs/op
+BenchmarkRPC/sequential/nop/gocapnp-6     	   41646	    141264 ns/op	    5129 B/op	      83 allocs/op
+BenchmarkRPC/sequential/nop/mdcapnp-6     	   88906	     69713 ns/op	     432 B/op	       2 allocs/op
+BenchmarkRPC/sequential/nop/mdcapl0-6     	  340033	     17142 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRPC/sequential/add/tcp-6         	  410706	     14199 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRPC/sequential/add/http1-6       	   38641	    154971 ns/op	   10739 B/op	      79 allocs/op
+BenchmarkRPC/sequential/add/ws-6          	  354241	     16999 ns/op	     112 B/op	       4 allocs/op
+BenchmarkRPC/sequential/add/wsjson-6      	  194386	     30417 ns/op	    2240 B/op	      26 allocs/op
+BenchmarkRPC/sequential/add/grpc-6        	   28134	    220042 ns/op	    8926 B/op	     168 allocs/op
+BenchmarkRPC/sequential/add/gocapnp-6     	   37840	    158003 ns/op	    5151 B/op	      85 allocs/op
+BenchmarkRPC/sequential/add/mdcapnp-6     	   74116	     79016 ns/op	     432 B/op	       2 allocs/op
+BenchmarkRPC/sequential/add/mdcapl0-6     	  327132	     17769 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRPC/sequential/tree/tcp-6        	   17540	    331251 ns/op	      71 B/op	       0 allocs/op
+BenchmarkRPC/sequential/tree/http1-6      	    9291	    543912 ns/op	   25009 B/op	      91 allocs/op
+BenchmarkRPC/sequential/tree/ws-6         	   14655	    401719 ns/op	     197 B/op	       4 allocs/op
+BenchmarkRPC/sequential/tree/wsjson-6     	     537	  10919667 ns/op	 1416557 B/op	    2581 allocs/op
+BenchmarkRPC/sequential/tree/grpc-6       	    1946	   2859197 ns/op	  854614 B/op	   12724 allocs/op
+BenchmarkRPC/sequential/tree/gocapnp-6    	    1130	   4444957 ns/op	  452755 B/op	    6674 allocs/op
+BenchmarkRPC/sequential/tree/mdcapnp-6    	    4242	   1262799 ns/op	  653856 B/op	    1425 allocs/op
+BenchmarkRPC/sequential/tree/mdcapl0-6    	    7837	    756563 ns/op	    1212 B/op	       2 allocs/op
+BenchmarkRPC/sequential/hex/tcp-6         	   18302	    328842 ns/op	1195.76 MB/s	       0 B/op	       0 allocs/op
+BenchmarkRPC/sequential/hex/http1-6       	    6639	    785933 ns/op	 500.32 MB/s	   70030 B/op	     148 allocs/op
+BenchmarkRPC/sequential/hex/ws-6          	   13821	    434540 ns/op	 904.90 MB/s	     112 B/op	       4 allocs/op
+BenchmarkRPC/sequential/hex/wsjson-6      	    1971	   3287040 ns/op	 119.63 MB/s	 1260563 B/op	      35 allocs/op
+BenchmarkRPC/sequential/hex/grpc-6        	    4550	   1241019 ns/op	 316.85 MB/s	  438335 B/op	     186 allocs/op
+BenchmarkRPC/sequential/hex/gocapnp-6     	    8372	    629455 ns/op	 624.69 MB/s	  151190 B/op	      87 allocs/op
+BenchmarkRPC/sequential/hex/mdcapnp-6     	   14011	    429553 ns/op	 915.41 MB/s	     680 B/op	       2 allocs/op
+BenchmarkRPC/sequential/hex/mdcapl0-6     	   17133	    343972 ns/op	1143.16 MB/s	     320 B/op	       0 allocs/op
+BenchmarkRPC/parallel/nop/tcp-6           	 1080715	      5786 ns/op	      12 B/op	       0 allocs/op
+BenchmarkRPC/parallel/nop/http1-6         	  263061	     19607 ns/op	    4545 B/op	      53 allocs/op
+BenchmarkRPC/parallel/nop/ws-6            	  765109	      6616 ns/op	     132 B/op	       4 allocs/op
+BenchmarkRPC/parallel/nop/wsjson-6        	  587150	      9152 ns/op	    2019 B/op	      18 allocs/op
+BenchmarkRPC/parallel/nop/grpc-6          	  182523	     31719 ns/op	    8627 B/op	     158 allocs/op
+BenchmarkRPC/parallel/nop/gocapnp-6       	  215613	     31510 ns/op	    5171 B/op	      84 allocs/op
+BenchmarkRPC/parallel/nop/mdcapnp-6       	  717956	      7942 ns/op	     458 B/op	       2 allocs/op
+BenchmarkRPC/parallel/nop/mdcapl0-6       	  901225	      6492 ns/op	      17 B/op	       0 allocs/op
+BenchmarkRPC/parallel/add/tcp-6           	  903477	      5610 ns/op	      14 B/op	       0 allocs/op
+BenchmarkRPC/parallel/add/http1-6         	  201948	     26150 ns/op	   10487 B/op	      79 allocs/op
+BenchmarkRPC/parallel/add/ws-6            	  901567	      6554 ns/op	     129 B/op	       4 allocs/op
+BenchmarkRPC/parallel/add/wsjson-6        	  501619	     10449 ns/op	    2271 B/op	      26 allocs/op
+BenchmarkRPC/parallel/add/grpc-6          	  166910	     32489 ns/op	    8958 B/op	     168 allocs/op
+BenchmarkRPC/parallel/add/gocapnp-6       	  219099	     30084 ns/op	    5180 B/op	      85 allocs/op
+BenchmarkRPC/parallel/add/mdcapnp-6       	  602200	      8451 ns/op	     463 B/op	       2 allocs/op
+BenchmarkRPC/parallel/add/mdcapl0-6       	  858574	      7206 ns/op	      18 B/op	       0 allocs/op
+BenchmarkRPC/parallel/tree/tcp-6          	   50119	    105969 ns/op	     402 B/op	       1 allocs/op
+BenchmarkRPC/parallel/tree/http1-6        	   36097	    163520 ns/op	   24850 B/op	      92 allocs/op
+BenchmarkRPC/parallel/tree/ws-6           	   45880	    126236 ns/op	     608 B/op	       5 allocs/op
+BenchmarkRPC/parallel/tree/wsjson-6       	    2122	   2929940 ns/op	 1144884 B/op	    2539 allocs/op
+BenchmarkRPC/parallel/tree/grpc-6         	    6243	    926141 ns/op	  719048 B/op	   12190 allocs/op
+BenchmarkRPC/parallel/tree/gocapnp-6      	    4990	   1196511 ns/op	  429672 B/op	    6849 allocs/op
+BenchmarkRPC/parallel/tree/mdcapnp-6      	   13791	    395454 ns/op	  629548 B/op	    1347 allocs/op
+BenchmarkRPC/parallel/tree/mdcapl0-6      	   27690	    215557 ns/op	    2731 B/op	       4 allocs/op
+BenchmarkRPC/parallel/hex/tcp-6           	   52924	    110911 ns/op	3545.32 MB/s	     250 B/op	       0 allocs/op
+BenchmarkRPC/parallel/hex/http1-6         	   22906	    241418 ns/op	1628.78 MB/s	   69338 B/op	     149 allocs/op
+BenchmarkRPC/parallel/hex/ws-6            	   40417	    147620 ns/op	2663.71 MB/s	     504 B/op	       4 allocs/op
+BenchmarkRPC/parallel/hex/wsjson-6        	    6435	    934601 ns/op	 420.73 MB/s	 1053425 B/op	      37 allocs/op
+BenchmarkRPC/parallel/hex/grpc-6          	   10792	    555050 ns/op	 708.43 MB/s	  360864 B/op	     185 allocs/op
+BenchmarkRPC/parallel/hex/gocapnp-6       	   27758	    181762 ns/op	2163.36 MB/s	  142515 B/op	      87 allocs/op
+BenchmarkRPC/parallel/hex/mdcapnp-6       	   45628	    146758 ns/op	2679.35 MB/s	    1402 B/op	       2 allocs/op
+BenchmarkRPC/parallel/hex/mdcapl0-6       	   46190	    122250 ns/op	3216.48 MB/s	     722 B/op	       0 allocs/op
 PASS
-ok  	github.com/matheusd/gorpcbench	202.169s
+ok  	github.com/matheusd/gorpcbench	440.483s
